@@ -26,8 +26,8 @@ def fetch_days():
         "Content-Type": "application/json"
     }
 
-    # Calculate exact rolling 365 days window up to today
-    to_date = datetime.datetime.now(datetime.timezone.utc)
+    # Calculate exact rolling 365 days window up to today, plus 1 day for timezone safety
+    to_date = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=1)
     from_date = to_date - datetime.timedelta(days=365)
     
     query = """
