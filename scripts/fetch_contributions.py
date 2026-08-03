@@ -1,59 +1,84 @@
 #!/usr/bin/env python3
 """
-Scrape real daily contribution counts from GitHub's public, unauthenticated
-contributions endpoint (the same fragment the profile page itself uses) and
-write data/contributions.json with the raw days plus derived stats
-(current streak, longest streak, best day, monthly totals).
-
-No token, no auth, no GraphQL -- just the public HTML GitHub already serves.
-Run daily by .github/workflows/update-profile-art.yml.
+Fetch real daily contribution counts from GitHub's GraphQL API.
+Requires a GITHUB_TOKEN environment variable.
+Writes data/contributions.json with the raw days plus derived stats.
 """
 import datetime
 import json
 import os
-import re
 import sys
-
 import requests
-from bs4 import BeautifulSoup
 
 USERNAME = os.environ.get("GH_PROFILE_USER", "Abhinav2896")
-URL = f"https://github.com/users/{USERNAME}/contributions"
+TOKEN = os.environ.get("GITHUB_TOKEN")
 OUT_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "contributions.json")
 
 
 def fetch_days():
-    resp = requests.get(URL, headers={"User-Agent": "profile-readme-bot/1.0"}, timeout=30)
-    resp.raise_for_status()
-    soup = BeautifulSoup(resp.text, "html.parser")
-
-    cells = soup.select("td.ContributionCalendar-day")
-    if not cells:
-        print("no calendar cells found -- github markup may have changed", file=sys.stderr)
+    if not TOKEN:
+        print("Error: GITHUB_TOKEN environment variable is not set.", file=sys.stderr)
         sys.exit(1)
 
-    days = []
-    for td in cells:
-        date = td.get("data-date")
-        if not date:
-            continue
-        td_id = td.get("id")
-        tooltip_el = soup.find("tool-tip", attrs={"for": td_id}) if td_id else None
-        text = tooltip_el.get_text(strip=True) if tooltip_el else ""
-        if re.search(r"no contributions", text, re.I):
-            count = 0
-        else:
-            m = re.match(r"(\d+)", text)
-            count = int(m.group(1)) if m else 0
-        days.append({"date": date, "count": count})
+    url = "https://api.github.com/graphql"
+    headers = {
+        "Authorization": f"Bearer {TOKEN}",
+        "Content-Type": "application/json"
+    }
 
+    # Calculate exact rolling 365 days window up to today
+    to_date = datetime.datetime.now(datetime.timezone.utc)
+    from_date = to_date - datetime.timedelta(days=365)
+    
+    query = """
+    query($userName: String!, $from: DateTime!, $to: DateTime!) {
+      user(login: $userName) {
+        contributionsCollection(from: $from, to: $to) {
+          contributionCalendar {
+            totalContributions
+            weeks {
+              contributionDays {
+                contributionCount
+                date
+              }
+            }
+          }
+        }
+      }
+    }
+    """
+    
+    variables = {
+        "userName": USERNAME,
+        "from": from_date.isoformat(),
+        "to": to_date.isoformat()
+    }
+    
+    resp = requests.post(url, headers=headers, json={"query": query, "variables": variables})
+    resp.raise_for_status()
+    data = resp.json()
+    
+    if "errors" in data:
+        print("GraphQL Errors:", json.dumps(data["errors"], indent=2), file=sys.stderr)
+        sys.exit(1)
+        
+    calendar = data["data"]["user"]["contributionsCollection"]["contributionCalendar"]
+    
+    days = []
+    for week in calendar["weeks"]:
+        for day in week["contributionDays"]:
+            days.append({
+                "date": day["date"],
+                "count": day["contributionCount"]
+            })
+            
     days.sort(key=lambda d: d["date"])
     return days
 
 
 def compute_current_streak(days):
     idx = len(days) - 1
-    if days[idx]["count"] == 0:
+    if idx >= 0 and days[idx]["count"] == 0:
         idx -= 1  # today isn't over yet -- don't break the streak on it
     streak = 0
     end_idx = idx
@@ -87,7 +112,7 @@ def compute_longest_streak(days):
 def build_data(days):
     total = sum(d["count"] for d in days)
     active_days = sum(1 for d in days if d["count"] > 0)
-    best = max(days, key=lambda d: d["count"])
+    best = max(days, key=lambda d: d["count"]) if days else {"date": None, "count": 0}
     cur_len, cur_start, cur_end = compute_current_streak(days)
     long_len, long_start, long_end = compute_longest_streak(days)
 
@@ -98,26 +123,29 @@ def build_data(days):
     monthly_list = [{"month": k, "total": v} for k, v in sorted(monthly.items())]
 
     return {
-        "username": USERNAME,
-        "generated_at": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "range": {"start": days[0]["date"], "end": days[-1]["date"]},
         "total_contributions": total,
         "active_days": active_days,
         "avg_per_active_day": round(total / active_days, 1) if active_days else 0,
+        "best_day": best,
         "current_streak": {"length": cur_len, "start": cur_start, "end": cur_end},
         "longest_streak": {"length": long_len, "start": long_start, "end": long_end},
-        "best_day": {"date": best["date"], "count": best["count"]},
-        "monthly": monthly_list,
-        "days": days,
+        "monthly_totals": monthly_list,
+        "days": days
     }
 
 
-if __name__ == "__main__":
+def main():
+    print(f"fetching graphql data for {USERNAME}...")
     days = fetch_days()
     data = build_data(days)
+
     os.makedirs(os.path.dirname(OUT_PATH), exist_ok=True)
     with open(OUT_PATH, "w") as f:
         json.dump(data, f, indent=2)
+
     print(f"wrote {OUT_PATH}: {data['total_contributions']} contributions, "
-          f"current streak {data['current_streak']['length']}, "
-          f"longest streak {data['longest_streak']['length']}")
+          f"{len(days)} days ({days[0]['date']} to {days[-1]['date']})")
+
+
+if __name__ == "__main__":
+    main()
