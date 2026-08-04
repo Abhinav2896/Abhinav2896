@@ -28,7 +28,7 @@ jobs:
 
       - name: Fetch contribution data using GraphQL
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
         run: python scripts/fetch_contributions.py
 
       - name: Render animated contribution graph SVG
