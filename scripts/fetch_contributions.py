@@ -31,9 +31,9 @@ def fetch_days():
     from_date = to_date - datetime.timedelta(days=365)
     
     query = """
-    query($userName: String!, $from: DateTime!, $to: DateTime!) {
+    query($userName: String!) {
       user(login: $userName) {
-        contributionsCollection(from: $from, to: $to) {
+        contributionsCollection {
           contributionCalendar {
             totalContributions
             weeks {
@@ -49,9 +49,7 @@ def fetch_days():
     """
     
     variables = {
-        "userName": USERNAME,
-        "from": from_date.isoformat(),
-        "to": to_date.isoformat()
+        "userName": USERNAME
     }
     
     resp = requests.post(url, headers=headers, json={"query": query, "variables": variables})
