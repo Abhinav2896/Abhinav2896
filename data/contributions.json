@@ -1,20 +1,20 @@
 {
-  "total_contributions": 343,
-  "active_days": 52,
-  "avg_per_active_day": 6.6,
+  "total_contributions": 344,
+  "active_days": 53,
+  "avg_per_active_day": 6.5,
   "best_day": {
     "date": "2026-07-27",
     "count": 53
   },
   "current_streak": {
-    "length": 19,
+    "length": 20,
     "start": "2026-07-27",
-    "end": "2026-08-14"
+    "end": "2026-08-15"
   },
   "longest_streak": {
-    "length": 19,
+    "length": 20,
     "start": "2026-07-27",
-    "end": "2026-08-14"
+    "end": "2026-08-15"
   },
   "monthly_totals": [
     {
@@ -67,38 +67,10 @@
     },
     {
       "month": "2026-08",
-      "total": 124
+      "total": 125
     }
   ],
   "days": [
-    {
-      "date": "2025-08-10",
-      "count": 0
-    },
-    {
-      "date": "2025-08-11",
-      "count": 0
-    },
-    {
-      "date": "2025-08-12",
-      "count": 0
-    },
-    {
-      "date": "2025-08-13",
-      "count": 0
-    },
-    {
-      "date": "2025-08-14",
-      "count": 0
-    },
-    {
-      "date": "2025-08-15",
-      "count": 0
-    },
-    {
-      "date": "2025-08-16",
-      "count": 0
-    },
     {
       "date": "2025-08-17",
       "count": 0
@@ -1553,6 +1525,10 @@
     },
     {
       "date": "2026-08-15",
+      "count": 1
+    },
+    {
+      "date": "2026-08-16",
       "count": 0
     }
   ]
