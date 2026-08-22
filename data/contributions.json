@@ -1,20 +1,20 @@
 {
-  "total_contributions": 351,
-  "active_days": 58,
-  "avg_per_active_day": 6.1,
+  "total_contributions": 352,
+  "active_days": 59,
+  "avg_per_active_day": 6.0,
   "best_day": {
     "date": "2026-07-27",
     "count": 53
   },
   "current_streak": {
-    "length": 25,
+    "length": 26,
     "start": "2026-07-27",
-    "end": "2026-08-20"
+    "end": "2026-08-21"
   },
   "longest_streak": {
-    "length": 25,
+    "length": 26,
     "start": "2026-07-27",
-    "end": "2026-08-20"
+    "end": "2026-08-21"
   },
   "monthly_totals": [
     {
@@ -67,7 +67,7 @@
     },
     {
       "month": "2026-08",
-      "total": 132
+      "total": 133
     }
   ],
   "days": [
@@ -1549,6 +1549,10 @@
     },
     {
       "date": "2026-08-21",
+      "count": 1
+    },
+    {
+      "date": "2026-08-22",
       "count": 0
     }
   ]
